@@ -5,7 +5,7 @@
   "main": "./src/index.js",
   "scripts": {
     "start": "node build",
-    "build": "prisma generate && tsc",
+    "build": "tsc && prisma generate",
     "dev": "tsc-watch --onSuccess \"npm start\" "
   },
   "prisma": {
