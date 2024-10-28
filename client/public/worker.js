@@ -114,22 +114,32 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', (event) => {
     if (event.request.method === 'GET') {
         if (event.request.url.includes('/api/')) {
+            console.log("New request registered")
             event.respondWith(
-                fetch(event.request).then((networkResponse) => {
-                    if (networkResponse && networkResponse.ok) {
-                        return caches.open(API_CACHE_NAME).then((cache) => {
-                            cache.put(event.request.url, networkResponse.clone());
-                            return networkResponse;
-                        });
-                    } else {
+                fetch(event.request)
+                    .then((networkResponse) => {
+                        if (networkResponse && networkResponse.ok) {
+                            return caches.open(API_CACHE_NAME).then((cache) => {
+                                cache.put(event.request.url, networkResponse.clone());
+                                return networkResponse;
+                            });
+                        } else {
+                            return caches.match(event.request).then(cachedResponse => {
+                                if (cachedResponse) {
+                                    return cachedResponse;
+                                }
+                                return new Response('Network error occurred. Please try again later.', { status: 404 });
+                            });
+                        }
+                    }).catch((err) => {
                         return caches.match(event.request).then(cachedResponse => {
                             if (cachedResponse) {
-                                return cachedResponse;
+                                console.log(cachedResponse)
+                                return cachedResponse
                             }
                             return new Response('Network error occurred. Please try again later.', { status: 404 });
                         });
-                    }
-                })
+                    })
             );
         } else {
             // Handling static assets
