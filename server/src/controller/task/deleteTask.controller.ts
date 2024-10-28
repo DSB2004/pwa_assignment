@@ -14,7 +14,7 @@ const DeleteTask = async (request: Request, response: Response) => {
             where: { id: id },
         });
 
-        return response.status(410).json({ delete_id: id });
+        return response.status(200).json({ delete_id: id });
     } catch (error) {
         console.error("Error:", error);
         return response.status(500).json({ message: "Internal server error" });

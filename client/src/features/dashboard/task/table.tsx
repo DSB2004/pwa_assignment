@@ -4,47 +4,56 @@ import Row from "../../../components/table/row";
 import Data from "../../../components/table/data";
 import Body from "../../../components/table/body";
 import Head from "../../../components/table/head";
-// import Content from "../../../assets/reports.json";
-import Actions from "./actions";
-import { useState } from "react";
+import Update from "./actions";
+import Delete from "./delete";
+import Pagenation from "../../../components/pagenation";
+import { useQuery } from "@tanstack/react-query";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import useTask from "../../../hooks/useTask";
+import { useSearchParams } from "react-router-dom";
 export default function Table() {
+    const [params] = useSearchParams();
+    const { getTaskList } = useTask();
+    const { data, error, status } = useQuery({
+        queryKey: ['tasks_page_' + params.get('page')],
+        queryFn: () => getTaskList(String(params.get('page'))),
+    });
 
-
-
-    const [Content] = useState<any[]>([])
-
-
-
-
+    if (error) return <div className="my-4">Error loading tasks...</div>;
+    if (status === 'pending') return <div className="my-10 flex items-center justify-center text-lg" >
+        <AiOutlineLoading3Quarters className="w-14 h-14 animate-spin" />
+    </div>
     return (
-        <>
+
+        <div className="flex gap-0 my-4 justify-center flex-col">
+            <Pagenation totalPage={data?.totalPage || 1} nextPage={data?.nextPage || null} previousPage={data?.previousPage || null} />
             <Wrapper key="wrapper">
                 <Header key="header">
                     <Row>
-                        <Head key="email">Title</Head>
-                        <Head key="phone">Done By</Head>
-
+                        <Head key="title">Title</Head>
+                        <Head key="status">Status</Head>
                         <Head key="actions">Actions</Head>
                     </Row>
                 </Header>
                 <Body>
-                    {Content.map((ele) => {
-                        return (
-                            <>
-                                <Row key={ele.id}>
-                                    <Data key={ele.id + "_name"}>{ele.title}</Data>
-                                    <Data key={ele.id + "_email"}>{ele.madeBy}</Data>
+                    {data?.tasks.map((ele) => (
+                        <Row key={ele.id}>
+                            <Data key={ele.id + "_title"}>{ele.title}</Data>
+                            <Data key={ele.id + "_status"}>{ele.status}</Data>
+                            <Data>
 
-                                    <Data>
+                                <div className="flex items-center gap-2 my-1">
 
-                                        <Actions />
-                                    </Data>
-                                </Row>
-                            </>
-                        );
-                    })}
+                                    <Update id={ele.id} />
+                                    <Delete id={ele.id} />
+                                </div>
+
+                            </Data>
+                        </Row>
+                    ))}
                 </Body>
+
             </Wrapper>
-        </>
+        </div>
     );
 }

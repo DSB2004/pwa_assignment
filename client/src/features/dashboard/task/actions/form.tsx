@@ -1,62 +1,92 @@
-import BorderButton from "../../../../components/button/border_button";
-import TextArea from "../../../../components/input/border_textarea";
-import Input from "../../../../components/input/border_input";
-import { MdDelete } from "react-icons/md";
-import { MdDownload } from "react-icons/md";
+import Input from '../../../../components/input/input';
+import Button from '../../../../components/button/border_button';
+import TextArea from '../../../../components/input/textarea';
+import Select from '../../../../components/input/select';
+import { taskSchema } from '../../../../lib/zod';
+import useTask, { TaskData } from '../../../../hooks/useTask';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+
+export default function Form({ closeAction, id }: { closeAction: Function; id: string; }) {
+  const queryClient = useQueryClient();
+  const [params] = useSearchParams();
+  const { updateTask, getTask } = useTask();
+
+  const { data, status, error } = useQuery({
+    queryKey: ['task_data_' + id],
+    queryFn: () => getTask(id),
+  })
 
 
-export default function Form({ closeAction }: { closeAction: Function }) {
+  const { handleSubmit, reset, register, formState: { errors, isSubmitting } } = useForm<TaskData>({
+    resolver: zodResolver(taskSchema),
+  });
+
+
+  const mutation = useMutation({
+    mutationFn: (data: TaskData) => updateTask(data),
+    onSuccess: () => {
+      // @ts-ignore
+      queryClient.invalidateQueries(['tasks_' + params.get('page')]);
+    },
+    onError: (error) => {
+      console.error(error);
+    }
+  });
+
+
+  const onSubmit = async (data: TaskData) => {
+    await mutation.mutateAsync(data);
+    reset();
+    closeAction();
+  };
+
   return (
-    <>
-      <form action="" className="m-0 w-full">
-        <div className="flex flex-col mx-4">
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="flex flex-col items-center justify-center gap-2 mb-4 min-w-72 mx-auto w-11/12">
+        <Input {...register('id')} hidden defaultValue={id} />
+        <Input
+          disabled={status === 'pending'}
+          {...register('title')}
+          placeholder="Task title ..."
+          className="w-full md:w-80"
+          error={errors.title?.message}
+          defaultValue={data?.task.title}
+        />
+        <TextArea
+          disabled={status === 'pending'}
+          {...register('body')}
+          placeholder="Any comments..."
+          className="w-full md:w-80"
+          rows={8}
+          error={errors.body?.message}
+          defaultValue={data?.task.body}
+        />
+        <Select {...register('status')}
+          disabled={status === 'pending'}
+          defaultValue={data?.task.status}
+          className="w-full md:w-80"
+          error={errors.status?.message}>
+          <option value="TODO">To Do</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="DONE">Done</option>
+          <option value="BLOCKED">Blocked</option>
+          <option value="REVIEW">Review</option>
+          <option value="ON_HOLD">On Hold</option>
+          <option value="CANCELLED">Cancelled</option>
+        </Select>
 
-          <div className="m-4 flex justify-between">
-            <h1 className="font-semibold">Report Overview</h1>
-            {/* <MdDownload className="h-6 w-6" onClick={() => DownloadPDF(PDF_Report, "report")} /> */}
-          </div>
-
-          <div className="flex flex-col m-4 mt-0">
-            <div className="flex justify-between  gap-3 items-center my-2">
-              <span className="text-xs font-semibold hidden md:inline">Title</span>
-              <Input placeholder="Report Title ..." className="w-full md:w-80 " />
-            </div>
-            <div className="flex justify-between  gap-3 my-2">
-              <span className="text-xs font-semibold hidden md:inline mt-2">
-                About
-              </span>
-              <TextArea placeholder="About report ..." className="w-full md:w-80 " rows={10} />
-            </div>
-            <div className="flex justify-between  gap-3 items-center my-2">
-              <span className="text-xs font-semibold hidden md:inline">Done By</span>
-              <Input placeholder="Full name ..." className="w-full md:w-80 " />
-            </div>
-
-          </div>
-
-          <div className="mx-4 my-2 flex items-center justify-between">
-            <BorderButton type="button" className="border-red-500 text-red-500 p-2" >
-              <MdDelete className="w-4 h-4" />
-              Delete
-            </BorderButton>
-
-            <div className="flex items-center gap-1">
-              <BorderButton type="button" className="bg-black text-white p-2 px-3">
-                Save
-              </BorderButton>
-              <BorderButton type="button" className="border-black p-2 " onClick={() => closeAction()}>
-
-                Cancel
-
-              </BorderButton>
-            </div>
-          </div >
-
-
-
-
+        <div className='flex justify-end w-full md:w-80'>
+          <Button type="submit" className='p-2 w-20 bg-4 text-center flex items-center justify-center' disabled={isSubmitting}>
+            {isSubmitting ? <AiOutlineLoading3Quarters className='w-3 h-3 animate-spin ' /> : <>Update Task</>}
+          </Button>
+          <Button type="button" className='p-2 bg-4' onClick={() => closeAction()}>Cancel</Button>
         </div>
-      </form >
-    </>
+      </div>
+    </form>
   );
 }

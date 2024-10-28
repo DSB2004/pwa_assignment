@@ -4,6 +4,7 @@ import Dashboard from "./page/dashboard";
 import Task from "./features/dashboard/task"
 import Blog from "./features/dashboard/blog";
 import Overview from "./features/dashboard/overview";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 const Router = createBrowserRouter([
   {
     path: "/",
@@ -18,7 +19,13 @@ const Router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={Router} />;
+  const queryClient = new QueryClient()
+
+  return <>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={Router} />
+    </QueryClientProvider>
+  </>
 }
 
 export default App;

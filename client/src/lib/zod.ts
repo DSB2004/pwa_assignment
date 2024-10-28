@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 const taskSchema = z.object({
+    id: z.string(),
     title: z.string().min(1, "Title is required"),
     body: z.string(),
     status: z.enum([

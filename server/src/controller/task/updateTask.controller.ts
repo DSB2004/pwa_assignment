@@ -5,7 +5,7 @@ import { taskSchema } from "../../lib/zod";
 const UpdateTask = async (request: Request, response: Response) => {
     try {
 
-        const { title, body, status } = request.body;
+        const { title, body, status } = await request.body;
         const { id } = request.query;
 
         if (!id || typeof id !== "string") {
